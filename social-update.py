@@ -6,6 +6,8 @@ import requests
 import logging
 import os
 import shutil
+import facebook
+import requests
 # pip install python-decouple
 from decouple import config
 
@@ -20,6 +22,8 @@ TWITTER_CONSUMER_SECRET = config('TWITTER_CONSUMER_SECRET')
 TWITTER_ACCESS_TOKEN = config('TWITTER_ACCESS_TOKEN')
 TWITTER_ACCESS_TOKEN_SECRET = config('TWITTER_ACCESS_TOKEN_SECRET')
 USER_AGENT = 'python:saralgyaan_social_updates:v1.0.0 (by /u/uditvashisht)'
+FACEBOOK_PAGE_ID = config('FACEBOOK_PAGE_ID')
+FACEBOOK_ACCESS_TOKEN = config('FACEBOOK_ACCESS_TOKEN')
 
 # Dictionary containing subreddits and tags
 SUBREDDIT_DICT = {'programmerhumor': ['progammer', 'programmerhumor', 'humor'],
@@ -36,6 +40,41 @@ file_handler = logging.FileHandler(f'{os.path.join(current_dir, "social-update.l
 fmt = logging.Formatter('%(levelname)s : %(name)s : %(asctime)s : %(message)s')
 file_handler.setFormatter(fmt)
 logger.addHandler(file_handler)
+
+
+def auto_post_facebook(picture, message):
+    """A function which auto-posts the photos with hastags on facebook.
+
+    Requires
+    --------
+    facebook: module
+        pip install facebook-sdk, import facebook
+    page_id : str
+        Page ID of the facebook page.
+    access_token : str
+        Access token of facebook account.
+
+        Can be obtained from https://developers.facebook.com/tools.
+        Use this tutorial
+        https://pythoncircle.com/post/666/automating-facebook-page-posts-using-python-script/
+    Parameters
+    __________
+    message : str
+        title and hashtags of the photo.
+    picture: str
+        Complete link of the header image.
+
+    Posts
+    _____
+        A post containing photo title and hashtags
+
+    """
+    graph = facebook.GraphAPI(FACEBOOK_ACCESS_TOKEN)
+    facebook_page_id = FACEBOOK_PAGE_ID
+    #IF you want to post a status update
+    # graph.put_object(facebook_page_id, "feed", message='test message')
+    graph.put_photo(image=open(picture, 'rb'),
+                    message=message)
 
 
 def login_to_reddit():
@@ -145,10 +184,12 @@ def main(sub_reddit, tags):
                 if 'jpg' in url:
                     grab_new_image(url)
                     post_tweet(tweet_content)
+                    auto_post_facebook('img.jpg', f'{title} #{" #".join(tags)}')
                     time.sleep(20)
                 elif 'png' in url:
                     grab_new_image(url)
                     post_tweet(tweet_content)
+                    auto_post_facebook('img.jpg', f'{title} #{" #".join(tags)}')
                     time.sleep(20)
                 else:
                     logger.info("* Not an image url")
